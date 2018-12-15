@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ur5ee_teleope)
+project(ur5e_teleope)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,9 +8,10 @@ project(ur5ee_teleope)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   roscpp
   std_msgs
+  tf
+  interactive_markers
 )
 
 ## System dependencies are found with CMake's conventions
@@ -47,6 +48,14 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
+
+
+
+
+
+
+
+
 # add_message_files(
 #   FILES
 #   Message1.msg
@@ -105,7 +114,8 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ur5e_teleope
-#  CATKIN_DEPENDS message_generation roscpp std_msgs
+   CATKIN_DEPENDS 
+     roscpp std_msgs tf interactive_markers
 #  DEPENDS system_lib
 )
 
@@ -149,6 +159,10 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(interactive_marker src/interactive_marker.cpp)
+#add_dependencies(interactive_marker interactive_marker_generate_messages_cpp)
+target_link_libraries(interactive_marker ${catkin_LIBRARIES})
 
 #############
 ## Install ##
