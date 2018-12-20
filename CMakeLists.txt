@@ -12,10 +12,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   interactive_markers
+  trac_ik_lib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS date_time)
+find_package(orocos_kdl REQUIRED)
+
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -115,9 +119,18 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ur5e_teleope
    CATKIN_DEPENDS 
-     roscpp std_msgs tf interactive_markers
+     roscpp 
+     std_msgs 
+     tf 
+     interactive_markers
+     trac_ik_lib
 #  DEPENDS system_lib
+   DEPENDS
+     Boost
+     orocos_kdl
 )
+
+
 
 ###########
 ## Build ##
@@ -128,6 +141,8 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -198,7 +213,10 @@ target_link_libraries(interactive_marker ${catkin_LIBRARIES})
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
-
+install(PROGRAMS
+  scripts/ur5e_ik_marker_teleope
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 #############
 ## Testing ##
 #############
