@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rospy
+import time
 # TF stuff
 from geometry_msgs.msg import PoseStamped
 from tf.transformations import euler_from_quaternion
@@ -51,10 +52,10 @@ class PR2Teleop(object):
         jtp = JointTrajectoryPoint()
         jtp.positions = list(positions)
         jtp.velocities = [0.0] * len(positions)
-        jtp.time_from_start = rospy.Time(0.1)   #default 0.4
+        jtp.time_from_start = rospy.Time(0.08)   #default 0.4
         jt.points.append(jtp)
         # print("Goal: ")
-        print(jt)
+        #print(jt)
         self.right_command.publish(jt)
     '''
     def send_left_arm_goal(self, positions):
@@ -97,6 +98,7 @@ class PR2Teleop(object):
             # rospy.loginfo("Got pose: " + str(ps))
             sol = None
             retries = 0
+            start = time.clock()
             while not sol and retries < 10:
                 sol = self.ik_right.get_ik(qinit,
                                            x, y, z,
@@ -104,9 +106,11 @@ class PR2Teleop(object):
                                            bx, by, bz,
                                            brx, bry, brz)
                 retries += 1
+            end = time.clock()
+            print "Execution time:" + str(1000*(end-start)) + "ms"
             if sol:
                 print "Solution found: (" + str(retries) + " retries)"
-                print sol
+                #print sol
 
                 self.send_right_arm_goal(sol)
                 qinit = sol
