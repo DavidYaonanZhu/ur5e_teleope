@@ -134,7 +134,7 @@ def main():
         print "Connected to server"
         #move1()
         #move_repeated()
-        move2()
+        move()
         #move_disordered()
         #move_interrupt()
     except KeyboardInterrupt:
