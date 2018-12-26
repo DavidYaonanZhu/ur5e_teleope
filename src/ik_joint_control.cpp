@@ -1,0 +1,108 @@
+#include "ros/ros.h"
+#include "std_msgs/String.h"
+#include <boost/date_time.hpp>
+#include <trac_ik/trac_ik.hpp>
+
+/**
+ * This is to caluclate the ik acording to received pose message from topic "gripper_marker_pose".
+ * IK is caluclated by trac_ik_lib, and joint positions are sent to action server to control the robot.
+ * Yaonan Zhu 20181218
+ * This tutorial demonstrates simple receipt of messages over the ROS system.
+ */
+class Ur5e{
+    std::string chain_start="base_link", chain_end="ee_link", urdf_param="/robot_description";
+    double timeout=0.005;
+    double eps = 1e-5;
+public:
+    geometry_msgs::PoseStamped last_pose;
+
+    //functions
+    void pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg);
+    TRAC_IK::TRAC_IK tracik_solver(chain_start, chain_end, urdf_param, timeout, eps);
+
+
+    //action client
+    actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> cli_arm;
+};
+
+// This constructor parses the URDF loaded in rosparm urdf_param into the
+//TRAC_IK::TRAC_IK tracik_solver("base_link", "ee_link", "/robot_description", 0.005, 1e-5);
+
+
+void Ur5e::pose_callback(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+  last_pose = *msg;
+}
+
+void ikCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
+{
+  //ROS_INFO("I heard: [%s]", msg->data.c_str());
+
+  rc=Ur5e.tracik_solver.CartToJnt(nominal,end_effector_pose,result);
+
+
+}
+
+int main(int argc, char **argv)
+{
+  /**
+   * The ros::init() function needs to see argc and argv so that it can perform
+   * any ROS arguments and name remapping that were provided at the command line. For programmatic
+   * remappings you can use a different version of init() which takes remappings
+   * directly, but for most command-line programs, passing argc and argv is the easiest
+   * way to do it.  The third argument to init() is the name of the node.
+   *
+   * You must call one of the versions of ros::init() before using any other
+   * part of the ROS system.
+   */
+  ros::init(argc, argv, "ik_joint_control");
+
+  /**
+   * NodeHandle is the main access point to communications with the ROS system.
+   * The first NodeHandle constructed will fully initialize this node, and the last
+   * NodeHandle destructed will close down the node.
+   */
+  ros::NodeHandle n;
+
+  /**
+   * The subscribe() call is how you tell ROS that you want to receive messages
+   * on a given topic.  This invokes a call to the ROS
+   * master node, which keeps a registry of who is publishing and who
+   * is subscribing.  Messages are passed to a callback function, here
+   * called chatterCallback.  subscribe() returns a Subscriber object that you
+   * must hold on to until you want to unsubscribe.  When all copies of the Subscriber
+   * object go out of scope, this callback will automatically be unsubscribed from
+   * this topic.
+   *
+   * The second parameter to the subscribe() function is the size of the message
+   * queue.  If messages are arriving faster than they are being processed, this
+   * is the number of messages that will be buffered up before beginning to throw
+   * away the oldest ones.
+
+  std::string chain_start, chain_end, urdf_param;
+  double timeout;
+
+  nh.param("chain_start", chain_start, std::string(""));
+  nh.param("chain_end", chain_end, std::string(""));
+
+  if (chain_start=="" || chain_end=="") {
+    ROS_FATAL("Missing chain info in launch file");
+    exit (-1);
+  }
+
+  nh.param("timeout", timeout, 0.005);
+  nh.param("urdf_param", urdf_param, std::string("/robot_description"));
+  double eps = 1e-5;
+ */
+
+  ros::Subscriber sub1 = n.subscribe("gripper_marker_pose", 100, Ur5e::pose_callback); //current joint position
+  ros::Subscriber sub2 = n.subscribe("gripper_marker_pose", 100, ikCallback);
+
+  /**
+   * ros::spin() will enter a loop, pumping callbacks.  With this version, all
+   * callbacks will be called from within this thread (the main one).  ros::spin()
+   * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
+   */
+  ros::spin();
+
+  return 0;
+}

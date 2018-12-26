@@ -49,13 +49,28 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>message_generation</build_depend>
+  <!--<build_depend>message_generation</build_depend>-->
   <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
   <build_depend>std_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <build_depend>interactive_markers</build_depend>
+  <build_depend>boost</build_depend>
+  <build_depend>trac_ik_lib</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>orocos_kdl</build_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>std_msgs</build_export_depend>
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>tf</exec_depend>
+  <exec_depend>interactive_markers</exec_depend>
+  <exec_depend>boost</exec_depend>
+  <exec_depend>orocos_kdl</exec_depend>
+  <exec_depend>trac_ik_lib</exec_depend>
+  <exec_depend>xacro</exec_depend>
+  <exec_depend>tf2</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(ur5ee_teleope)
+project(ur5e_teleope)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,13 +8,18 @@ project(ur5ee_teleope)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   roscpp
   std_msgs
+  tf
+  interactive_markers
+  trac_ik_lib
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS date_time)
+find_package(orocos_kdl REQUIRED)
+
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -47,6 +52,14 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
+
+
+
+
+
+
+
+
 # add_message_files(
 #   FILES
 #   Message1.msg
@@ -105,9 +118,19 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ur5e_teleope
-#  CATKIN_DEPENDS message_generation roscpp std_msgs
+   CATKIN_DEPENDS 
+     roscpp 
+     std_msgs 
+     tf 
+     interactive_markers
+     trac_ik_lib
 #  DEPENDS system_lib
+   DEPENDS
+     Boost
+     orocos_kdl
 )
+
+
 
 ###########
 ## Build ##
@@ -118,6 +141,8 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -149,6 +174,10 @@ include_directories(
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(interactive_marker src/interactive_marker.cpp)
+#add_dependencies(interactive_marker interactive_marker_generate_messages_cpp)
+target_link_libraries(interactive_marker ${catkin_LIBRARIES})
 
 #############
 ## Install ##
@@ -184,7 +213,10 @@ include_directories(
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
-
+install(PROGRAMS
+  scripts/ur5e_ik_marker_teleope
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 #############
 ## Testing ##
 #############
