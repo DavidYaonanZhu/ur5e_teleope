@@ -71,6 +71,7 @@
   <exec_depend>trac_ik_lib</exec_depend>
   <exec_depend>xacro</exec_depend>
   <exec_depend>tf2</exec_depend>
+  <exec_depend>remote_manipulation_merkers</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

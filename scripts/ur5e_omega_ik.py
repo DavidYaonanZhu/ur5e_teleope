@@ -7,36 +7,11 @@ from geometry_msgs.msg import PoseStamped
 from tf.transformations import euler_from_quaternion
 from math import radians
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-import actionlib
-from control_msgs.msg import *
 
 from trac_ik_python.trac_ik import IK
 
 
 class PR2Teleop(object):
-    def init_pose(self):
-        #rospy.init_node("test_move", anonymous=True, disable_signals=True)
-
-        JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
-                       'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-        client = actionlib.SimpleActionClient('pos_based_pos_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
-        print "Waiting for server..."
-        client.wait_for_server()
-        print "Connected to server"
-        g = FollowJointTrajectoryGoal()
-        g.trajectory = JointTrajectory()
-        g.trajectory.joint_names = JOINT_NAMES
-        g.trajectory.points = [
-            JointTrajectoryPoint(positions=[1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0], velocities=[0]*6, time_from_start=rospy.Duration(1.0))]
-        client.send_goal(g) #this is the initail pose of the robot
-        time.sleep(2.0)
-        print "Interrupting"
-        try:
-            client.wait_for_result()
-        except KeyboardInterrupt:
-            client.cancel_goal()
-            raise
-
     def __init__(self):
         urdf = rospy.get_param('/robot_description')
         self.ik_right = IK("base_link",
@@ -48,16 +23,16 @@ class PR2Teleop(object):
          #                                   JointTrajectory,
           #                                  queue_size=1)
 
-        self.right_command = rospy.Publisher('/pos_based_pos_traj_controller/command',
+        self.right_command = rospy.Publisher('/arm_controller/command',
                                              JointTrajectory,
                                              queue_size=1)
 
         #self.last_left_pose = None /pos_based_pos_traj_controller/command /arm_controller/command
-        #self.left_pose = rospy.Subscriber('/left_controller_as_posestamped',
+        #self.left_pose = rospy.Subscriber('/left_controller_as_posestamped',/free_positioning/gripper_marker_pose
                                           #PoseStamped,
                                           #self.left_cb, queue_size=1)
-        self.last_right_pose = [1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]#None
-        self.right_pose = rospy.Subscriber('/free_positioning/gripper_marker_pose',
+        self.last_right_pose = None
+        self.right_pose = rospy.Subscriber('/sigma7/sigma0/pose',
                                            PoseStamped,
                                            self.right_cb, queue_size=1)
 
@@ -97,7 +72,7 @@ class PR2Teleop(object):
         '''
 
     def run_with_ik(self):
-        qinit = [1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]#[0., 0., 0., 0., 0., 0.]
+        qinit = [0., 0., 0., 0., 0., 0.]
         x = y = z = 0.0
         rx = ry = rz = 0.0
         rw = 1.0
@@ -147,9 +122,6 @@ class PR2Teleop(object):
 
 if __name__ == '__main__':
     rospy.init_node('ur5e_ik_marker_teleope_py')
-    #global client
     nv = PR2Teleop()
-    nv.init_pose()
-    time.sleep(1.0)
     nv.run_with_ik()
 
