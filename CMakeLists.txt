@@ -121,6 +121,8 @@ catkin_package(
    CATKIN_DEPENDS 
      roscpp 
      std_msgs 
+     geometry_msgs
+     sensor_msgs
      tf 
      interactive_markers
      trac_ik_lib
@@ -139,11 +141,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${orocos_kdl_INCLUDE_DIRS}
 )
+
+add_library(ur_imp_class src/ur_imp.cpp)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -175,9 +179,18 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(interactive_marker src/interactive_marker.cpp)
+add_executable(ur_imp src/main.cpp
+                      )
+#add_executable(interactive_marker src/interactive_marker.cpp)
 #add_dependencies(interactive_marker interactive_marker_generate_messages_cpp)
-target_link_libraries(interactive_marker ${catkin_LIBRARIES})
+#target_link_libraries(ur5e_teleope ${catkin_LIBRARIES})
+
+
+target_link_libraries(ur_imp
+  ur_imp_class
+  ${catkin_LIBRARIES}
+)
+
 
 #############
 ## Install ##
@@ -213,10 +226,10 @@ target_link_libraries(interactive_marker ${catkin_LIBRARIES})
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
-install(PROGRAMS
-  scripts/ur5e_ik_marker_teleope
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+#install(PROGRAMS
+#  scripts/ur5e_ik_marker_teleope
+#  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+#)
 #############
 ## Testing ##
 #############

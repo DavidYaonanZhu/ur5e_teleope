@@ -12,13 +12,17 @@ from control_msgs.msg import *
 
 from trac_ik_python.trac_ik import IK
 
-#type of initial pose
+
 init_pos1=[1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]
-init_pos3=[0.872665,-1.22173,2.00713,-0.785398,-0.698132,-3.14159]
-init_pos2=[0.698132, -1.02974, 1.90241, -0.837758, -0.837758, -3.141592]
+init_pos2=[0.698132, -1.02974, 1.90241, -0.837758, -0.837758, -3.141592]#default
+init_pos3=[0.872665,-1.22173,2.00713,-0.785398,-0.698132,-3.14159] 
+#init_pos4 is 18cm gripper+4cm wrist radious.  22cm in Z, 0.174465 0.402667 0.22214 
+init_pos4=[0.698131,-1.18085,1.82886,-0.613092,-0.837756,-3.14159] 
 
 #control loop rate
 control_rate = 125
+
+
 
 class PR2Teleop(object):
     def init_pose(self):
@@ -34,7 +38,7 @@ class PR2Teleop(object):
         g.trajectory = JointTrajectory()
         g.trajectory.joint_names = JOINT_NAMES
         g.trajectory.points = [
-            JointTrajectoryPoint(positions=init_pos2, velocities=[0]*6, time_from_start=rospy.Duration(1.0))]
+            JointTrajectoryPoint(positions=init_pos4, velocities=[0]*6, time_from_start=rospy.Duration(1.0))]
         client.send_goal(g) #this is the initail pose of the robot
         time.sleep(2.0)
         print "Interrupting"
@@ -47,7 +51,8 @@ class PR2Teleop(object):
     def __init__(self):
         urdf = rospy.get_param('/robot_description')
         self.ik_right = IK("base_link",
-                           "ee_link",(1.0/control_rate)*0.6,1e-5,"Distance",urdf)
+                           "ee_link",(1.0/control_rate)*0.4,1e-5,"Distance",urdf)
+        print(1.0/control_rate)
         #self.ik_left = IK("torso_lift_link",
          #                 "l_wrist_roll_link")
 
@@ -55,7 +60,7 @@ class PR2Teleop(object):
          #                                   JointTrajectory,
           #                                  queue_size=1)
 
-        self.right_command = rospy.Publisher('/vel_based_pos_traj_controller/command',
+        self.right_command = rospy.Publisher('/pos_based_pos_traj_controller/command',
                                              JointTrajectory,
                                              queue_size=1)
 
@@ -63,8 +68,8 @@ class PR2Teleop(object):
         #self.left_pose = rospy.Subscriber('/left_controller_as_posestamped',
                                           #PoseStamped,
                                           #self.left_cb, queue_size=1)
-        self.last_right_pose = init_pos2#None
-        self.right_pose = rospy.Subscriber('/free_positioning/gripper_marker_pose',
+        self.last_right_pose = init_pos4#None
+        self.right_pose = rospy.Subscriber('/ur_imp/robot_tar_pose',
                                            PoseStamped,
                                            self.right_cb, queue_size=1)
 
@@ -104,7 +109,7 @@ class PR2Teleop(object):
         '''
 
     def run_with_ik(self):
-        qinit = init_pos2#[0., 0., 0., 0., 0., 0.]
+        qinit = init_pos4#[0., 0., 0., 0., 0., 0.]
         x = y = z = 0.0
         rx = ry = rz = 0.0
         rw = 1.0
@@ -154,9 +159,9 @@ class PR2Teleop(object):
 
 if __name__ == '__main__':
     rospy.init_node('ur5e_ik_marker_teleope_py')
-    #global client
     nv = PR2Teleop()
     nv.init_pose()
-    time.sleep(1.0)
+    time.sleep(7.0) #wait for omega to be ready
     nv.run_with_ik()
+
 

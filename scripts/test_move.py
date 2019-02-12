@@ -11,6 +11,8 @@ JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
 Q1 = [2.2,0,-1.57,0,0,0]
 Q2 = [1.5,0,-1.57,0,0,0]
 Q3 = [1.5,-0.2,-1.57,0,0,0]
+Qinit = [1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]
+Qinit2 = [0.698132, -1.02974, 1.90241, -0.837758, -0.837758, -3.141592]
 
 client = None
 
@@ -34,7 +36,7 @@ def init_pose():
     g.trajectory = JointTrajectory()
     g.trajectory.joint_names = JOINT_NAMES
     g.trajectory.points = [
-        JointTrajectoryPoint(positions=[1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0], velocities=[0]*6, time_from_start=rospy.Duration(2.0))]
+        JointTrajectoryPoint(positions=Qinit2, velocities=[0]*6, time_from_start=rospy.Duration(4.0))]
     client.send_goal(g)
     try:
         client.wait_for_result()

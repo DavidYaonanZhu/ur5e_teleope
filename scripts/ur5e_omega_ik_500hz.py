@@ -12,13 +12,15 @@ from control_msgs.msg import *
 
 from trac_ik_python.trac_ik import IK
 
-#type of initial pose
+
 init_pos1=[1.57079632, -1.57079632, 1.57079632, -1.57079632, -1.57079632, 0]
-init_pos3=[0.872665,-1.22173,2.00713,-0.785398,-0.698132,-3.14159]
 init_pos2=[0.698132, -1.02974, 1.90241, -0.837758, -0.837758, -3.141592]
+init_pos3=[0.872665,-1.22173,2.00713,-0.785398,-0.698132,-3.14159] #default
 
 #control loop rate
 control_rate = 125
+
+
 
 class PR2Teleop(object):
     def init_pose(self):
@@ -26,7 +28,7 @@ class PR2Teleop(object):
 
         JOINT_NAMES = ['shoulder_pan_joint', 'shoulder_lift_joint', 'elbow_joint',
                        'wrist_1_joint', 'wrist_2_joint', 'wrist_3_joint']
-        client = actionlib.SimpleActionClient('pos_based_pos_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
+        client = actionlib.SimpleActionClient('vel_based_pos_traj_controller/follow_joint_trajectory', FollowJointTrajectoryAction)
         print "Waiting for server..."
         client.wait_for_server()
         print "Connected to server"
@@ -47,7 +49,8 @@ class PR2Teleop(object):
     def __init__(self):
         urdf = rospy.get_param('/robot_description')
         self.ik_right = IK("base_link",
-                           "ee_link",(1.0/control_rate)*0.6,1e-5,"Distance",urdf)
+                           "ee_link",(1.0/control_rate)*0.4,1e-5,"Distance",urdf)
+        print(1.0/control_rate)
         #self.ik_left = IK("torso_lift_link",
          #                 "l_wrist_roll_link")
 
@@ -64,7 +67,7 @@ class PR2Teleop(object):
                                           #PoseStamped,
                                           #self.left_cb, queue_size=1)
         self.last_right_pose = init_pos2#None
-        self.right_pose = rospy.Subscriber('/free_positioning/gripper_marker_pose',
+        self.right_pose = rospy.Subscriber('/sigma7/sigma0/pose',
                                            PoseStamped,
                                            self.right_cb, queue_size=1)
 
@@ -154,9 +157,9 @@ class PR2Teleop(object):
 
 if __name__ == '__main__':
     rospy.init_node('ur5e_ik_marker_teleope_py')
-    #global client
     nv = PR2Teleop()
     nv.init_pose()
     time.sleep(1.0)
     nv.run_with_ik()
+
 
