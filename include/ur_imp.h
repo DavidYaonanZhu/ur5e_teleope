@@ -15,6 +15,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/JointState.h>
+#include <std_msgs/Float64MultiArray.h>
 
 
 // Filters
@@ -73,13 +74,13 @@ private:
 
   // Publisher
   ros::Publisher pub_robot_tar_pose_;
-//  ros::Publisher pub_joint_pos_;
+  ros::Publisher pub_dx_pos_;
 //  ros::Publisher pub_target_tip_pos_;
 //  ros::Publisher pub_target_tip_ori_;
 
   // Publisher Msgs
   geometry_msgs::PoseStamped pub_robot_tar_pose_msg_;
-//  std_msgs::Float64MultiArray pub_joint_pos_msg_;
+  std_msgs::Float64MultiArray pub_dx_pos_msg_;
 //  std_msgs::Float64MultiArray pub_target_tip_pos_msg_;
 //  std_msgs::Float64MultiArray pub_target_tip_ori_msg_;
 

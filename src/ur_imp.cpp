@@ -16,7 +16,11 @@ namespace ur_nu
 
         pub_robot_tar_pose_ =
             nh_.advertise<geometry_msgs::PoseStamped>("ur_imp/robot_tar_pose", 1);
+        pub_dx_pos_ =
+            nh_.advertise<std_msgs::Float64MultiArray>("ur_imp/dx", 1);
 
+
+        pub_dx_pos_msg_.data.resize(3,0);
 
         // Virtual Stiffness
         K_trans_ = Matrix3d::Identity();
@@ -26,8 +30,8 @@ namespace ur_nu
 
         // Virtual Damping
         C_trans_ = Matrix3d::Identity();
-        C_trans_(0, 0) = 200; // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps:  150/400
-        C_trans_(1, 1) = 200; // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps:   150/80
+        C_trans_(0, 0) = 0; // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps:  150/400
+        C_trans_(1, 1) = 0; // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps:   150/80
         C_trans_(2, 2) = 200; // Wacoh: 80 ATI17: 60 ATI40: 50 ATI40RobForceps:  150/400
 
         C_rot_ = Matrix3d::Identity();
@@ -37,8 +41,8 @@ namespace ur_nu
 
         // Virtual Mass
         M_trans_ = Matrix3d::Identity();
-        M_trans_(0, 0) = 0.1; // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
-        M_trans_(1, 1) = 0.1; // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
+        M_trans_(0, 0) = 0; // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
+        M_trans_(1, 1) = 0; // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
         M_trans_(2, 2) = 0.1; // Wacoh 2 ATI17: 8 ATI40: 4.5 ATI40RobForceps: 4.5/8
 
         M_rot_ = Matrix3d::Identity();
@@ -101,7 +105,7 @@ namespace ur_nu
         if (flag_omega_rcv_){
             // TRANSLATION
             int i;
-            for (i = 0; i < 3; i++) {
+            for (i = 2; i < 3; i++) {
               V_d_[i] = (M_trans_(i, i) * V_temp_(i) + thread_sampling_time_sec_d_ * force_[i]) /
                           (thread_sampling_time_sec_d_ * C_trans_(i, i) + M_trans_(i, i)); // (m/s)
             }
@@ -112,7 +116,8 @@ namespace ur_nu
 
             V_temp_ = V_d_; /* v[k-1] = v[k] */
             //    Td_0_3_ = Td_0_3_ + 1000*thread_sampling_time_sec_d_*V_d_1_; // (mm)
-            imp_delta_pos_ = thread_sampling_time_sec_d_ * V_d_; // (m)
+            imp_delta_pos_ = imp_delta_pos_ + thread_sampling_time_sec_d_ * V_d_; // (m)
+            ROS_INFO_STREAM("delta_x (mm/s):" << 1000*imp_delta_pos_.transpose());
 
 
 
@@ -145,6 +150,10 @@ namespace ur_nu
             pub_robot_tar_pose_msg_.header = header_tmp;
             pub_robot_tar_pose_msg_.pose = pose_tmp;
 
+            pub_dx_pos_msg_.data[0] = imp_delta_pos_[0];
+            pub_dx_pos_msg_.data[1] = imp_delta_pos_[1];
+            pub_dx_pos_msg_.data[2] = imp_delta_pos_[2];
+            pub_dx_pos_.publish(pub_dx_pos_msg_);
 
             pub_robot_tar_pose_.publish(pub_robot_tar_pose_msg_);
         }
