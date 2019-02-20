@@ -17,6 +17,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
 
+#include "coordinate_transform_utils.h"
 
 // Filters
 //#include "filters.h"
@@ -30,6 +31,7 @@ const double VEL_LIMIT_WAND = 0.05;
 const double DEG2RAD = 0.017453293;
 const double PI = 3.14159265359;
 const double thread_sampling_time_sec_d_ = 0.008;
+const double ANG_VEL_LIMIT_WAND = 0.4;
 
 class URImp
 {
@@ -97,9 +99,23 @@ private:
   Eigen::Matrix3d M_rot_;   /* Wandering: Inertia for Rotation motion */
   Eigen::Vector3d V_d_;     /* Wandering: Actual trans. velocity: V[k] */
   Eigen::Vector3d V_temp_;  /* Wandering: Previous velocity: V[k-1] */
+  Eigen::Vector3d w_dot_d_;     /* Wandering: Actual angular velocity: w[k] */
   Eigen::Vector3d w_d_;     /* Wandering: Actual angular velocity: w[k] */
   Eigen::Vector3d w_temp_;  /* Wandering: Previous angular velocity: w[k-1] */
+  Eigen::Vector3d X_temp_2_;//X(k-2)
+  Eigen::Vector3d X_temp_1_;//X(k-1)
+  Eigen::Vector3d X_d_;
 
+  Eigen::Quaterniond quat_temp_2_;//X(k-2)
+  Eigen::Quaterniond quat_temp_1_;//X(k-1)
+  Eigen::Quaterniond quat_d_;
+
+  Eigen::VectorXd x;
+  Eigen::VectorXd xd;
+  Eigen::Matrix3d M, D, K;
+  Eigen::Vector3d imp_m, imp_d, imp_k, imp_i, imp_d_o, imp_k_o;
+  Eigen::MatrixXd A;
+  Eigen::MatrixXd B;
   //Local variables
   Eigen::Vector3d force_;
   Eigen::Vector3d torque_;
@@ -110,6 +126,7 @@ private:
 
   //Flag
   bool flag_omega_rcv_;
+  bool firsttime_;
 
 //  std::string name_;
 //  VectorXi    di_status_;

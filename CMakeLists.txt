@@ -179,7 +179,7 @@ add_library(ur_imp_class src/ur_imp.cpp)
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(ur_imp src/main.cpp
+add_executable(ur_imp src/main.cpp src/coordinate_transform_utils.cpp
                       )
 #add_executable(interactive_marker src/interactive_marker.cpp)
 #add_dependencies(interactive_marker interactive_marker_generate_messages_cpp)

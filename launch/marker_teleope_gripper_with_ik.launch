@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+<!-- launch ur_modern_driver ros_control -->
+  <include file="$(find ur_modern_driver)/launch/ur5e_gripper_ros_control.launch">
+   <arg name="robot_ip" value="$(arg robot_ip)"/>
+  </include>
+
+<!-- launch rviz using my configuration file -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ur5e_teleope)/config/marker_teleope.rviz"/>
+
+<!-- launch omega7 haptic device -->
+  <include file="$(find sigma)/launch/sigma.launch"></include>
+
+<!-- launch trac_ik solver -->
+  <node pkg="ur5e_teleope" name="ur5e_omega_ik.py" type="ur5e_omega_ik.py" output="screen"/>
+
+</launch>
