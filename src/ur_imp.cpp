@@ -7,34 +7,37 @@ URImp::URImp(ros::NodeHandle &node_handle) {
   nh_ = node_handle;
 
   sub_robot_pose_ =
-      nh_.subscribe("/joint_states", 1, &URImp::getRobotJPosCb, this);
+      nh_.subscribe("joint_states", 1, &URImp::getRobotJPosCb, this);
   sub_omega_pose_ =
-      nh_.subscribe("/sigma7/sigma0/pose", 1, &URImp::getOmegaPoseCb, this);
-  sub_force_ = nh_.subscribe("/sigma7/sigma0/force_filtered", 1,
+      nh_.subscribe("sigma7/sigma0/pose", 1, &URImp::getOmegaPoseCb, this);
+  sub_force_ = nh_.subscribe("sigma7/sigma0/force_filtered", 1,
                              &URImp::getForceCb, this);
+  sub_force_robot_ = nh_.subscribe("wrench", 1,
+                             &URImp::getForceRobotCb, this);
 
   pub_robot_tar_pose_ =
       nh_.advertise<geometry_msgs::PoseStamped>("ur_imp/robot_tar_pose", 1);
+  pub_robot_current_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("ur_imp/robot_current_pose", 1);
   pub_dx_pos_ = nh_.advertise<std_msgs::Float64MultiArray>("ur_imp/dx", 1);
 
   pub_dx_pos_msg_.data.resize(3, 0);
 
   // Virtual Stiffness
   K_trans_ = Matrix3d::Identity();
-  K_trans_(0, 0) = 0;    //
-  K_trans_(1, 1) = 0;    //
-  K_trans_(2, 2) = 800;  //
+  K_trans_(0, 0) = 800;    //0
+  K_trans_(1, 1) = 800;    //0
+  K_trans_(2, 2) = 1500;  //1500
 
   K_rot_ = Matrix3d::Identity();
-  K_rot_(0, 0) = 10;  //
-  K_rot_(1, 1) = 10;  //
-  K_rot_(2, 2) = 10;  //
+  K_rot_(0, 0) = 10;  //10
+  K_rot_(1, 1) = 10;  //10
+  K_rot_(2, 2) = 10;  //10
 
   // Virtual Damping
   C_trans_ = Matrix3d::Identity();
-  C_trans_(0, 0) = 0;  // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps: 150/400
-  C_trans_(1, 1) = 0;  // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps: 150/80
-  C_trans_(2, 2) = 800;  // Wacoh: 80 ATI17: 60 ATI40: 50 ATI40RobForceps:  150/400
+  C_trans_(0, 0) = 20; // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps: 150/400
+  C_trans_(1, 1) = 20;  // Wacoh: 80 ATI17: 35 ATI40: 50 ATI40RobForceps: 150/80
+  C_trans_(2, 2) = 20;  // Wacoh: 80 ATI17: 60 ATI40: 50 ATI40RobForceps:  150/400
 
   C_rot_ = Matrix3d::Identity();
   C_rot_(0, 0) = 1;  // Wacoh: 2 ATI17:0.3 ATI40: 0.8 ATI40RobForceps: 0.7/0.5
@@ -43,8 +46,8 @@ URImp::URImp(ros::NodeHandle &node_handle) {
 
   // Virtual Mass
   M_trans_ = Matrix3d::Identity();
-  M_trans_(0, 0) = 0;    // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
-  M_trans_(1, 1) = 0;    // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
+  M_trans_(0, 0) = 0.1;    // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
+  M_trans_(1, 1) = 0.1;    // Wacoh 2 ATI17: 6 ATI40: 4.5 ATI40RobForceps: 4.5/8
   M_trans_(2, 2) = 0.1;  // Wacoh 2 ATI17: 8 ATI40: 4.5 ATI40RobForceps: 4.5/8
 
   M_rot_ = Matrix3d::Identity();
@@ -94,9 +97,48 @@ URImp::URImp(ros::NodeHandle &node_handle) {
   torque_ = Vector3d::Zero();
   robot_tar_cart_pos_ = Vector3d::Zero();
   quat_d_ = Eigen::Quaterniond::Identity();
-w_d_ = Eigen::Vector3d::Zero();
+  w_d_ = Eigen::Vector3d::Zero();
   flag_omega_rcv_ = false;
+  force_robot_ok_ = false;
+
+  urdf_param_ =  "robot_description";
+  double eps = 1e-5;
+  tracik_solver_.reset(new TRAC_IK::TRAC_IK("base_link", "ee_link", urdf_param_,
+                                             0.001, eps, TRAC_IK::Distance));
+
+  /** KDL **/
+    bool valid = tracik_solver_->getKDLChain(kdl_chain_);
+    if (!valid) {
+      ROS_ERROR_STREAM("There was no valid KDL chain found");
+    }
+
+    fk_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
+
+
+
 }
+
+int URImp::solveFK()
+{
+  qtmp_.data = robot_j_pos_;
+
+  bool kinematics_status;
+  kinematics_status = fk_solver_->JntToCart(qtmp_, xtmp_);
+
+  Affine3d T01;
+
+  if (!kinematics_status) {
+    tf::transformKDLToEigen(xtmp_, T01);
+    R_base_eef = T01.rotation();
+    T_base_eef = T01.translation();
+    // ROS_INFO_STREAM("R01" << R_0_1_);
+    // ROS_INFO_STREAM("T01" << T_0_1_);
+    return 0;
+  } else
+    ROS_ERROR_STREAM("No FK");
+  return -1;
+}
+
 
 // Callbacks
 void URImp::getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg) {
@@ -109,10 +151,62 @@ void URImp::getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg) {
   torque_[1] = wrench_tmp.torque.y;
   torque_[2] = wrench_tmp.torque.z;
 }
+
+void URImp::getForceRobotCb(const geometry_msgs::WrenchStamped::ConstPtr &msg) {
+  geometry_msgs::Wrench wrench_tmp;
+  wrench_tmp = msg->wrench;
+  force_robot_[0] = wrench_tmp.force.x;
+  force_robot_[1] = wrench_tmp.force.y;
+  force_robot_[2] = wrench_tmp.force.z;
+//  torque_[0] = wrench_tmp.torque.x;
+//  torque_[1] = wrench_tmp.torque.y;
+//  torque_[2] = wrench_tmp.torque.z;
+}
+
+
 URImp::~URImp() {}
 
 void URImp::getRobotJPosCb(const sensor_msgs::JointState::ConstPtr &msg) {
   robot_j_pos_ = VectorXd::Map(&msg->position[0], msg->position.size());
+  VectorXd robot_j_pos_tmp = robot_j_pos_;
+  // remapping joint names order
+  robot_j_pos_[0] = robot_j_pos_tmp[2];
+  robot_j_pos_[2] = robot_j_pos_tmp[0];
+
+
+  Affine3d            pose_eigen = Affine3d::Identity();
+    geometry_msgs::Pose pose;
+    solveFK();
+
+
+    // Publish EE Pose
+
+
+    pose_eigen.translation() = T_base_eef;
+    pose_eigen.linear()      = R_base_eef;
+    tf::poseEigenToMsg(pose_eigen, pose);
+
+    pub_robot_current_pose_msg_.header.stamp = ros::Time::now();
+    pub_robot_current_pose_msg_.pose         = pose;
+    pub_robot_current_pose_.publish(pub_robot_current_pose_msg_);
+
+    //publish TF
+    // TF
+        fk_tf_.header.stamp = pub_robot_current_pose_msg_.header.stamp;
+        fk_tf_.header.frame_id = "base_link";
+        fk_tf_.child_frame_id = "ur5e_fk";
+        fk_tf_.transform.translation.x = pub_robot_current_pose_msg_.pose.position.x;
+        fk_tf_.transform.translation.y = pub_robot_current_pose_msg_.pose.position.y;
+        fk_tf_.transform.translation.z = pub_robot_current_pose_msg_.pose.position.z;
+        // fk_tf_.transform.rotation.x =
+        // pub_robot_tar_pose_msg_.pose.orientation.x;
+        fk_tf_.transform.rotation.x = pub_robot_current_pose_msg_.pose.orientation.x;
+        fk_tf_.transform.rotation.y = pub_robot_current_pose_msg_.pose.orientation.y;
+        fk_tf_.transform.rotation.z = pub_robot_current_pose_msg_.pose.orientation.z;
+        fk_tf_.transform.rotation.w = pub_robot_current_pose_msg_.pose.orientation.w;
+        // tf情報をbroadcast(座標系の設定)
+        fk_tf_broadcaster_.sendTransform(fk_tf_);
+
 }
 
 void URImp::getOmegaPoseCb(const geometry_msgs::PoseStamped::ConstPtr &msg) {
@@ -179,9 +273,11 @@ void URImp::control_loop() {
     Eigen::VectorXd e_o = CoordTransformUtils::quaternionLogError(
         quat_d_, quat0);  // Quaternion log error
 
-//    Eigen::Vector3d torque_tmp = torque_;  // this part is for torque cordinates
+    Eigen::Vector3d torque_tmp = torque_;  // this part is for torque cordinates
 //    torque_[1] = torque_tmp[0]; // with modified coedinates in omega device.
 //    torque_[0] = -torque_tmp[1];
+    torque_[0] = -torque_tmp[2];   //pose90 torque remapping
+    torque_[2] = torque_tmp[0]; //pose90 torque remapping
 
     w_dot_d_ = M_rot_.inverse() * (-C_rot_ * w_d_ - K_rot_ * e_o + torque_);
     ROS_INFO_STREAM("Wa : (rad2/s) " << w_dot_d_.transpose());
@@ -284,7 +380,27 @@ void URImp::control_loop() {
 
     robot_tar_cart_pos_[0] = omega_pose_[0] + imp_delta_pos_[0];
     robot_tar_cart_pos_[1] = omega_pose_[1] + imp_delta_pos_[1];
-    robot_tar_cart_pos_[2] = omega_pose_[2] + imp_delta_pos_[2];
+
+    if(force_robot_[2] < 15){
+        force_robot_ok_ = true;
+
+}
+    else if (force_robot_[2] >=20){
+        force_robot_ok_ = false;
+    }
+
+    if(force_robot_ok_){
+        robot_tar_cart_pos_[2] = omega_pose_[2] + imp_delta_pos_[2];
+
+}
+    else {
+        if(omega_pose_[2] + imp_delta_pos_[2] - robot_tar_cart_pos_[2] >= 0)
+            robot_tar_cart_pos_[2] = omega_pose_[2] + imp_delta_pos_[2];
+
+    }
+
+
+
 
     Eigen::Quaterniond robot_ori_cart_pos;
     Eigen::Quaterniond omega_tmp;

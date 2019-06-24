@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(ur5e_teleope)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   interactive_markers
   trac_ik_lib
+  eigen_conversions
 )
 
 ## System dependencies are found with CMake's conventions
@@ -126,6 +127,7 @@ catkin_package(
      tf 
      interactive_markers
      trac_ik_lib
+     oculus_msgs
 #  DEPENDS system_lib
    DEPENDS
      Boost
@@ -145,9 +147,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${orocos_kdl_INCLUDE_DIRS}
+  ${catkin_EXPORTED_TARGETS}
 )
 
 add_library(ur_imp_class src/ur_imp.cpp)
+add_library(ur3e_hmd_class src/ur3e_hmd.cpp)
+#add_library(ur_fk_class src/fk.cpp)
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -181,13 +187,29 @@ add_library(ur_imp_class src/ur_imp.cpp)
 
 add_executable(ur_imp src/main.cpp src/coordinate_transform_utils.cpp
                       )
+add_executable(ur3e_hmd src/main_ur3e_hmd.cpp 
+                      )
+add_executable(ur_fk src/fk.cpp 
+                      )
+
+
 #add_executable(interactive_marker src/interactive_marker.cpp)
 #add_dependencies(interactive_marker interactive_marker_generate_messages_cpp)
+#add_dependencies(ur3e_hmd ${catkin_EXPORTED_TARGETS})
 #target_link_libraries(ur5e_teleope ${catkin_LIBRARIES})
 
 
 target_link_libraries(ur_imp
   ur_imp_class
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(ur3e_hmd
+  ur3e_hmd_class
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(ur_fk
+
   ${catkin_LIBRARIES}
 )
 

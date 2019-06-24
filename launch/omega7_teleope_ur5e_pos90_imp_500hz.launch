@@ -3,13 +3,11 @@
    <arg name="use_tool" default="true" />
    <arg name="force_scale" default="0.1" />
    <arg name="work_space_scale" default="1.0" />
-   <arg name="control_rate" default="125" />
-   <!--<arg name="set_foce" default="true" />-->
 
 <!-- launch ur_modern_driver ros_control -->
-  <include file="$(find ur_modern_driver)/launch/ur5e_ros_control.launch">
+  <include file="$(find ur_modern_driver)/launch/ur5e_ros_control_500hz.launch">
    <arg name="robot_ip" value="$(arg robot_ip)"/>
-  </include>
+  </include>  
 
 <!-- launch rviz using my configuration file -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find ur5e_teleope)/config/marker_teleope.rviz"/>
@@ -19,15 +17,16 @@
    <arg name="use_tool" value="$(arg use_tool)" />
    <arg name="force_scale" value="$(arg force_scale)" /> 
    <arg name="work_space_scale" value="$(arg work_space_scale)" />
-<arg name="set_foce" value="$(arg set_foce)" />
   </include>
+
+<!-- Gripper node -->
+<node pkg="robotiq_2f_gripper_control" name="Robotiq2FGripperRtuNode.py" type="Robotiq2FGripperRtuNode.py" output="screen" args="/dev/ttyUSB0"/>
+<node pkg="robotiq_2f_gripper_control" name="Robotiq2FGripperSimpleController_Omega7.py" type="Robotiq2FGripperSimpleController_Omega7.py" output="screen"/>
 
 <!-- launch imp_controller solver -->
   <node pkg="ur5e_teleope" name="ur_imp" type="ur_imp" output="screen"/>
 
 <!-- launch trac_ik solver -->
-  <node pkg="ur5e_teleope" name="ur5e_pos90_15cmtool_omega_ik_imp.py" type="ur5e_pos90_15cmtool_omega_ik_imp.py" output="screen">
-   <param name="control_rate" type="int" value="$(arg control_rate)"/>
-  </node>
+  <node pkg="ur5e_teleope" name="ur5e_pos90_15cmtool_omega_ik_imp_500hz.py" type="ur5e_pos90_15cmtool_omega_ik_imp_500hz.py" output="screen"/>
 
 </launch>

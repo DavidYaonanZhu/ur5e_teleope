@@ -1,6 +1,5 @@
-
-#ifndef _UR_IMP_H_
-#define _UR_IMP_H_
+#ifndef _UR_FK_H_
+#define _UR_FK_H_
 
 // ROS related
 #include <ros/ros.h>
@@ -17,10 +16,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
 
-//TF
-#include <tf/transform_broadcaster.h>
-
-#include "coordinate_transform_utils.h"
+//#include "coordinate_transform_utils.h"
 
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -38,7 +34,7 @@ using namespace Eigen;
 using namespace std;
 using namespace KDL;
 
-namespace ur_nu
+namespace ur_fk
 {
 const double VEL_LIMIT_WAND = 0.05;
 const double DEG2RAD = 0.017453293;
@@ -47,22 +43,22 @@ const double thread_sampling_time_sec_d_ = 0.002;
 const double ANG_VEL_LIMIT_WAND = 0.4;
 //const int thread_sampling_freq_hz;
 
-class URImp
+class URFK
 {
 
 public:
   // Constructor
-  URImp(ros::NodeHandle &node_handle);
-  ~URImp();
+  URFK(ros::NodeHandle &node_handle);
+  ~URFK();
 
   // Callbacks
 //  bool srvCommandCb(impact_interface::InterfaceCmd::Request & req,
 //                    impact_interface::InterfaceCmd::Response &res);
   void getRobotJPosCb(const sensor_msgs::JointState::ConstPtr &msg);
-  void getOmegaPoseCb(const geometry_msgs::PoseStamped::ConstPtr &msg);
-  void getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
+//  void getOmegaPoseCb(const geometry_msgs::PoseStamped::ConstPtr &msg);
+//  void getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
 //  void getRobotTPoseCb(const std_msgs::Float64MultiArray::ConstPtr &msg);
-  void getForceRobotCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
+//  void getForceRobotCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
 
   // Functions
 
@@ -86,14 +82,14 @@ private:
 
   // Subscribers
   ros::Subscriber sub_robot_pose_;
-  ros::Subscriber sub_omega_pose_;
-  ros::Subscriber sub_force_;
-  ros::Subscriber sub_force_robot_;
+//  ros::Subscriber sub_omega_pose_;
+//  ros::Subscriber sub_force_;
+//  ros::Subscriber sub_force_robot_;
 //  ros::Subscriber sub_t_pose_des_;
 
   // Publisher
-  ros::Publisher pub_robot_tar_pose_;
-  ros::Publisher pub_dx_pos_;
+//  ros::Publisher pub_robot_fk_;
+//  ros::Publisher pub_dx_pos_;
   ros::Publisher pub_robot_current_pose_;
 
 //  ros::Publisher pub_joint_pos_;
@@ -104,10 +100,6 @@ private:
   geometry_msgs::PoseStamped pub_robot_tar_pose_msg_;
   std_msgs::Float64MultiArray pub_dx_pos_msg_;
   geometry_msgs::PoseStamped pub_robot_current_pose_msg_;
-
-  //TF
-  geometry_msgs::TransformStamped fk_tf_;
-  tf::TransformBroadcaster fk_tf_broadcaster_;
 
   //  std_msgs::Float64MultiArray pub_joint_pos_msg_;
 //  std_msgs::Float64MultiArray pub_target_tip_pos_msg_;

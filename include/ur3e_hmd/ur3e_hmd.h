@@ -1,12 +1,14 @@
 
-#ifndef _UR_IMP_H_
-#define _UR_IMP_H_
+#ifndef _UR_3e_H_
+#define _UR_3e_H_
 
 // ROS related
 #include <ros/ros.h>
 
 // Eigen
 #include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 //#include <unsupported/Eigen/EulerAngles>
 // Services
 //#include <impact_interface/InterfaceCmd.h>
@@ -16,11 +18,12 @@
 #include <geometry_msgs/WrenchStamped.h>
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Float64MultiArray.h>
+#include <oculus_msgs/Oculus_rift.h>
 
 //TF
-#include <tf/transform_broadcaster.h>
+#include "tf/transform_broadcaster.h"
 
-#include "coordinate_transform_utils.h"
+//#include "coordinate_transform_utils.h"
 
 #include <kdl/chainfksolverpos_recursive.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -43,26 +46,27 @@ namespace ur_nu
 const double VEL_LIMIT_WAND = 0.05;
 const double DEG2RAD = 0.017453293;
 const double PI = 3.14159265359;
-const double thread_sampling_time_sec_d_ = 0.002;
+const double thread_sampling_time_sec_d_ = 0.0125;
 const double ANG_VEL_LIMIT_WAND = 0.4;
 //const int thread_sampling_freq_hz;
 
-class URImp
+class UR3e_hmd
 {
 
 public:
   // Constructor
-  URImp(ros::NodeHandle &node_handle);
-  ~URImp();
+  UR3e_hmd(ros::NodeHandle &node_handle);
+  ~UR3e_hmd();
 
   // Callbacks
 //  bool srvCommandCb(impact_interface::InterfaceCmd::Request & req,
 //                    impact_interface::InterfaceCmd::Response &res);
-  void getRobotJPosCb(const sensor_msgs::JointState::ConstPtr &msg);
-  void getOmegaPoseCb(const geometry_msgs::PoseStamped::ConstPtr &msg);
-  void getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
+//  void getRobotJPosCb(const sensor_msgs::JointState::ConstPtr &msg);
+//  void getOmegaPoseCb(const geometry_msgs::PoseStamped::ConstPtr &msg);
+//  void getForceCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
+  void getHMDPoseCb(const oculus_msgs::Oculus_rift::ConstPtr &msg);
 //  void getRobotTPoseCb(const std_msgs::Float64MultiArray::ConstPtr &msg);
-  void getForceRobotCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
+ // void getForceRobotCb(const geometry_msgs::WrenchStamped::ConstPtr &msg);
 
   // Functions
 
@@ -85,16 +89,22 @@ private:
 //  ros::ServiceServer srv_cmd_;
 
   // Subscribers
-  ros::Subscriber sub_robot_pose_;
-  ros::Subscriber sub_omega_pose_;
-  ros::Subscriber sub_force_;
-  ros::Subscriber sub_force_robot_;
+//  ros::Subscriber sub_robot_pose_;
+//  ros::Subscriber sub_omega_pose_;
+//  ros::Subscriber sub_force_;
+//  ros::Subscriber sub_force_robot_;
+  ros::Subscriber sub_hmd_pose_;
+
+
 //  ros::Subscriber sub_t_pose_des_;
 
   // Publisher
-  ros::Publisher pub_robot_tar_pose_;
-  ros::Publisher pub_dx_pos_;
-  ros::Publisher pub_robot_current_pose_;
+//  ros::Publisher pub_robot_tar_pose_;
+//  ros::Publisher pub_dx_pos_;
+//  ros::Publisher pub_robot_current_pose_;
+  ros::Publisher pub_robot_tar_pose_cmd_;
+
+  tf::TransformBroadcaster hmd_TF_broadcaster_;
 
 //  ros::Publisher pub_joint_pos_;
 //  ros::Publisher pub_target_tip_pos_;
@@ -102,36 +112,52 @@ private:
 
   // Publisher Msgs
   geometry_msgs::PoseStamped pub_robot_tar_pose_msg_;
-  std_msgs::Float64MultiArray pub_dx_pos_msg_;
-  geometry_msgs::PoseStamped pub_robot_current_pose_msg_;
-
-  //TF
-  geometry_msgs::TransformStamped fk_tf_;
-  tf::TransformBroadcaster fk_tf_broadcaster_;
+  geometry_msgs::PoseStamped robot_tar_pose_msg_tmp_;
+  geometry_msgs::TransformStamped ur3e_TF_;
+//  std_msgs::Float64MultiArray pub_dx_pos_msg_;
+//  geometry_msgs::PoseStamped pub_robot_current_pose_msg_;
 
   //  std_msgs::Float64MultiArray pub_joint_pos_msg_;
 //  std_msgs::Float64MultiArray pub_target_tip_pos_msg_;
 //  std_msgs::Float64MultiArray pub_target_tip_ori_msg_;
 
   // Augmented Dual Force control parameters -> Admittance Control
-  Eigen::Matrix3d K_trans_; /* Wandering: Stifness for Translation motion */
-  Eigen::Matrix3d K_rot_;   /* Wandering: Stifness for Rotation motion */
-  Eigen::Matrix3d C_trans_; /* Wandering: Damper for Translation motion */
-  Eigen::Matrix3d C_rot_;   /* Wandering: Damper for Rotation motion */
-  Eigen::Matrix3d M_trans_; /* Wandering: Inertia for Translation motion */
-  Eigen::Matrix3d M_rot_;   /* Wandering: Inertia for Rotation motion */
-  Eigen::Vector3d V_d_;     /* Wandering: Actual trans. velocity: V[k] */
-  Eigen::Vector3d V_temp_;  /* Wandering: Previous velocity: V[k-1] */
-  Eigen::Vector3d w_dot_d_;     /* Wandering: Actual angular velocity: w[k] */
-  Eigen::Vector3d w_d_;     /* Wandering: Actual angular velocity: w[k] */
-  Eigen::Vector3d w_temp_;  /* Wandering: Previous angular velocity: w[k-1] */
-  Eigen::Vector3d X_temp_2_;//X(k-2)
-  Eigen::Vector3d X_temp_1_;//X(k-1)
-  Eigen::Vector3d X_d_;
+//  Eigen::Matrix3d K_trans_; /* Wandering: Stifness for Translation motion */
+//  Eigen::Matrix3d K_rot_;   /* Wandering: Stifness for Rotation motion */
+//  Eigen::Matrix3d C_trans_; /* Wandering: Damper for Translation motion */
+//  Eigen::Matrix3d C_rot_;   /* Wandering: Damper for Rotation motion */
+//  Eigen::Matrix3d M_trans_; /* Wandering: Inertia for Translation motion */
+//  Eigen::Matrix3d M_rot_;   /* Wandering: Inertia for Rotation motion */
+//  Eigen::Vector3d V_d_;     /* Wandering: Actual trans. velocity: V[k] */
+//  Eigen::Vector3d V_temp_;  /* Wandering: Previous velocity: V[k-1] */
+//  Eigen::Vector3d w_dot_d_;     /* Wandering: Actual angular velocity: w[k] */
+//  Eigen::Vector3d w_d_;     /* Wandering: Actual angular velocity: w[k] */
+//  Eigen::Vector3d w_temp_;  /* Wandering: Previous angular velocity: w[k-1] */
+//  Eigen::Vector3d X_temp_2_;//X(k-2)
+//  Eigen::Vector3d X_temp_1_;//X(k-1)
+//  Eigen::Vector3d X_d_;
+
+  //ur3e initial position
+  double init_x_;
+  double init_y_;
+  double init_z_;
+
+  double init_hmd_x_;
+  double init_hmd_y_;
+  double init_hmd_z_;
+
+  double hmd_roll_, hmd_pitch_,hmd_yaw_;
+  double reg_roll_,reg_pitch_,reg_yaw_;
+  Eigen::Vector3d hmd_euler_;
 
   Eigen::Quaterniond quat_temp_2_;//X(k-2)
   Eigen::Quaterniond quat_temp_1_;//X(k-1)
   Eigen::Quaterniond quat_d_;
+
+  Eigen::Quaterniond quat_rot_hmd2robot_;
+  Eigen::Quaterniond quat_rot_hmd2world_;
+  Eigen::Quaterniond quat_hmd_;
+  Eigen::Quaterniond quat_hmd_tmp_;
 
   Eigen::VectorXd x;
   Eigen::VectorXd xd;
@@ -145,8 +171,11 @@ private:
   Eigen::Vector3d torque_;
   Eigen::VectorXd robot_j_pos_;
   Eigen::Vector3d robot_tar_cart_pos_;
-  Eigen::VectorXd omega_pose_;
+  Eigen::VectorXd hmd_pose_;
   Eigen::Vector3d imp_delta_pos_;
+
+  Eigen::Matrix3d rot_matrix_hmd2robot_=Eigen::Matrix3d::Zero();
+  Eigen::Matrix3d rot_matrix_hmd2world_=Eigen::Matrix3d::Zero();
 
 
   KDL::Chain kdl_chain_;
@@ -158,7 +187,7 @@ private:
 
 
   boost::scoped_ptr<KDL::ChainFkSolverPos>      fk_solver_;
- boost::scoped_ptr<TRAC_IK::TRAC_IK> tracik_solver_;
+  boost::scoped_ptr<TRAC_IK::TRAC_IK> tracik_solver_;
   //Flag
   bool flag_omega_rcv_;
   bool firsttime_;
